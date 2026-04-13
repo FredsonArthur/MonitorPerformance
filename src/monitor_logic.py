@@ -4,16 +4,19 @@ import os
 from datetime import datetime
 
 def obter_metricas():
-    """Retorna um dicionário com as métricas atuais do sistema."""
+    """Captura métricas detalhadas de CPU, RAM e Disco."""
+    uso_disco = psutil.disk_usage('/')
     return {
         "cpu_percent": psutil.cpu_percent(interval=1),
         "ram_percent": psutil.virtual_memory().percent,
         "ram_usada_gb": round(psutil.virtual_memory().used / (1024**3), 2),
-        "disco_percent": psutil.disk_usage('/').percent
+        "disco_percent": uso_disco.percent,
+        "disco_livre_gb": round(uso_disco.free / (1024**3), 2),
+        "disco_total_gb": round(uso_disco.total / (1024**3), 2)
     }
 
 def salvar_log(dados):
-    """Salva as métricas recebidas em um arquivo CSV na pasta /logs."""
+    """Salva o histórico de performance em um arquivo CSV na pasta /logs."""
     # Localiza o caminho absoluto da pasta 'logs' subindo um nível a partir de 'src'
     diretorio_atual = os.path.dirname(__file__)
     caminho_logs = os.path.abspath(os.path.join(diretorio_atual, '..', 'logs'))
