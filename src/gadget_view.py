@@ -60,5 +60,8 @@ class GadgetMonitor:
         self.root.after(1000, self.atualizar)
 
 if __name__ == "__main__":
-    app = GadgetMonitor()
-    app.root.mainloop()
+    try:
+        app = GadgetMonitor()
+        app.root.mainloop()
+    except KeyboardInterrupt:
+        print("Gadget Monitor encerrado com sucesso.")
