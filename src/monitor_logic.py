@@ -7,7 +7,7 @@ def obter_metricas():
     """Captura métricas detalhadas de CPU, RAM e Disco."""
     uso_disco = psutil.disk_usage('/')
     return {
-        "cpu_percent": psutil.cpu_percent(interval=1),
+        "cpu_percent": psutil.cpu_percent(interval=None),
         "ram_percent": psutil.virtual_memory().percent,
         "ram_usada_gb": round(psutil.virtual_memory().used / (1024**3), 2),
         "disco_percent": uso_disco.percent,
