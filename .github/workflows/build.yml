@@ -27,11 +27,11 @@ jobs:
 
     - name: Gerar Executável (Windows)
       if: matrix.os == 'windows-latest'
-      run: pyinstaller --noconsole --onefile --add-data "src;src" src/gadget_view.py
+      run: pyinstaller --noconsole --onefile --name "MonitorPerformance_Win" --add-data "src;src" src/gadget_view.py
 
     - name: Gerar Executável (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: pyinstaller --noconsole --onefile --add-data "src:src" src/gadget_view.py
+      run: pyinstaller --noconsole --onefile --name "MonitorPerformance_Linux" --add-data "src:src" src/gadget_view.py
 
     - name: Upload do Artefato
       uses: actions/upload-artifact@v4
