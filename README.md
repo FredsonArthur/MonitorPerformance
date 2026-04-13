@@ -1,40 +1,49 @@
 # 🖥️ Monitor de Performance de Sistema
 
-Este projeto consiste em um agente de monitoramento desenvolvido em Python, focado em fornecer uma visão analítica e em tempo real sobre a saúde e o consumo de recursos do hardware. 
-
-O objetivo é transformar o terminal em um dashboard informativo e leve, evitando a necessidade de interfaces pesadas para checagens rápidas de performance.
+Este projeto é um agente de monitoramento desenvolvido em Python que fornece uma visão analítica e em tempo real sobre a saúde do hardware. Ele evoluiu de um simples monitor de terminal para um **Gadget Desktop flutuante** com gráficos dinâmicos.
 
 ---
 
-## 🔍 Visão Geral do Projeto
+## 🔍 Visão Geral
 
-O monitor opera através de um ciclo de interrogação do sistema, onde extrai métricas vitais diretamente das APIs do sistema operacional. Ele foi projetado para ser modular, permitindo que novas camadas de análise (como logs e notificações) sejam acopladas à estrutura base.
+O monitor extrai métricas vitais diretamente das APIs do sistema operacional, permitindo o acompanhamento de recursos sem a necessidade de softwares pesados. Ele agora conta com uma interface gráfica leve que permanece visível sobre outros aplicativos.
+
+## 🚀 Funcionalidades Atuais
+
+* **Gadget Desktop**: Interface flutuante, sem bordas e transparente (Always-on-Top).
+* **Gráficos em Tempo Real**: Visualização em linha para tendências de uso de CPU e RAM.
+* **Interatividade**: O gadget pode ser arrastado para qualquer posição da tela.
+* **Sistema de Alertas**: Mudança dinâmica de cores (Verde/Amarelo/Vermelho) conforme o nível de estresse do hardware.
+* **Persistência de Dados**: Log automático de métricas em arquivos `.csv` para análise posterior.
 
 ## 🛠️ Tecnologias e Ferramentas
 
-Para a construção deste ecossistema, estamos utilizando:
+* **Python**: Lógica central e automação.
+* **psutil**: Captura de métricas de CPU, RAM, Disco e Rede.
+* **Tkinter**: Interface gráfica (GUI) para o gadget flutuante.
+* **Git & GitHub**: Gerenciamento de versão e workflow de desenvolvimento.
 
-* **Linguagem Python**: Base para toda a lógica de processamento e automação.
-* **Biblioteca psutil**: O principal componente para recuperação de informações do sistema (CPU, memória, discos, rede e processos).
-* **Git & GitHub**: Para versionamento semântico e gerenciamento do ciclo de vida do software.
-* **Visual Studio Code**: Ambiente de desenvolvimento principal, integrado com ferramentas de depuração e terminal.
+## 📂 Estrutura do Projeto
 
-## 🚀 Próximos Passos (Roadmap de Evolução)
+* `src/monitor_logic.py`: Motor de captura de dados e salvamento de logs.
+* `src/gadget_view.py`: Interface gráfica e renderização dos gráficos.
+* `src/app.py`: Versão clássica para monitoramento via terminal.
+* `logs/`: Armazenamento dos históricos de performance.
 
-O projeto está sendo construído seguindo uma trilha de evolução incremental:
+## 🚀 Próximos Passos (Roadmap)
 
-### 1. Camada de Monitoramento Base
-* [x] Captura de percentual de uso da CPU.
-* [x] Medição de memória RAM disponível e utilizada.
-* [x] Ciclo de atualização em tempo real no terminal.
+### 1. Camada Base & Interface (Concluído)
+* [x] Captura de CPU, RAM e Disco.
+* [x] Criação do Gadget flutuante com suporte a arrastar.
+* [x] Gráficos de linha dinâmicos para CPU e RAM.
 
-### 2. Inteligência e Persistência (Em Planejamento)
-* **Logging Analítico**: Implementação de registros em arquivos `.csv` ou `.log` para análise histórica de comportamento do hardware.
-* **Alertas de Pico**: Sistema de monitoramento que identifica quando os recursos atingem níveis críticos (ex: acima de 90%) e gera avisos.
+### 2. Expansão de Métricas (Em Andamento)
+* [ ] **Monitoramento de Rede**: Gráfico exclusivo para Download e Upload.
+* [ ] **Status de Bateria**: Monitoramento de carga e conexão para notebooks (IdeaPad).
 
-### 3. Interface e Experiência
-* **Refinamento Visual**: Implementação de bibliotecas para exibição de gráficos de barras e tabelas coloridas no console.
-* **Detalhamento de Hardware**: Inclusão de métricas de temperatura, leitura/escrita de disco e tráfego de rede (Upload/Download).
+### 3. Personalização e Alertas
+* [ ] Configuração de opacidade e cores via interface.
+* [ ] Notificações de sistema para picos de uso acima de 95%.
 
 ---
 *Este projeto é parte de um estudo prático de desenvolvimento de ferramentas de sistema e automação.*
