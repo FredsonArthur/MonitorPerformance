@@ -16,14 +16,14 @@ VSVersionInfo(
       [
       StringTable(
         u'040904B0',         # Idioma: Inglês (EUA) / Unicode
-        [StringProperty(u'CompanyName', u'Fredson Arthur Dev'),
-        StringProperty(u'FileDescription', u'Monitor de Performance Desktop'),
-        StringProperty(u'FileVersion', u'1.1.0.0'),
-        StringProperty(u'InternalName', u'MonitorPerformance'),
-        StringProperty(u'LegalCopyright', u'© 2026 Fredson Arthur.'),
-        StringProperty(u'OriginalFilename', u'MonitorPerformance.exe'),
-        StringProperty(u'ProductName', u'Monitor de Performance de Sistema'),
-        StringProperty(u'ProductVersion', u'1.1.0.0')])
+        [StringStruct(u'CompanyName', u'Fredson Arthur Dev'),
+        StringStruct(u'FileDescription', u'Monitor de Performance Desktop'),
+        StringStruct(u'FileVersion', u'1.1.0.0'),
+        StringStruct(u'InternalName', u'MonitorPerformance'),
+        StringStruct(u'LegalCopyright', u'© 2026 Fredson Arthur.'),
+        StringStruct(u'OriginalFilename', u'MonitorPerformance.exe'),
+        StringStruct(u'ProductName', u'Monitor de Performance de Sistema'),
+        StringStruct(u'ProductVersion', u'1.1.0.0')])
       ]), 
     VarFileInfo([VarTuple(u'Translation', [1033, 1200])])
   ]
