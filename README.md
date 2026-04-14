@@ -8,6 +8,19 @@ Este projeto é um agente de monitoramento desenvolvido em Python que fornece um
 
 O monitor extrai métricas vitais diretamente das APIs do sistema operacional, permitindo o acompanhamento de recursos de forma leve. A interface permanece visível sobre outros aplicativos (Always-on-Top), facilitando o monitoramento durante o uso intenso do computador.
 
+## 🛡️ Segurança e Transparência
+
+Como este é um projeto independente de código aberto, você pode encontrar alertas do **Windows Defender (SmartScreen)** ao executar o arquivo `.exe`. 
+
+**Por que isso acontece?**
+* **Assinatura Digital**: O executável não possui um certificado digital pago da Microsoft, o que gera o alerta de "Editor Desconhecido".
+* **Falso Positivo**: Ferramentas como o PyInstaller, usadas para criar o executável, são ocasionalmente sinalizadas por antivírus devido à sua forma de empacotamento.
+
+**Como verificar a segurança:**
+1. **Código Aberto**: Todo o código-fonte está disponível neste repositório para auditoria.
+2. **Execução Manual**: Se preferir, você pode rodar o projeto diretamente via Python usando `python src/gadget_view.py`.
+3. **Análise Externa**: Você pode submeter qualquer executável deste projeto ao [VirusTotal](https://www.virustotal.com/) para confirmação.
+
 ## 🚀 Funcionalidades Atuais
 
 * **Gadget Desktop**: Interface flutuante, sem bordas e com transparência ajustada.
@@ -44,7 +57,9 @@ O monitor extrai métricas vitais diretamente das APIs do sistema operacional, p
 * [x] **Status de Bateria**: Ícones dinâmicos para carga e descarga.
 * [x] **Distribuição**: Builds automáticos para Windows (.exe) e Linux.
 
-### 3. Personalização (Próximos Passos)
+### 3. Personalização e Segurança (Em andamento)
+* [x] **Controle de Refresh Rate**: Atualização suave de 1s para evitar cansaço visual.
+* [x] **Metadados de Segurança**: Inclusão de informações de versão e autor no executável.
 * [ ] Sistema de notificações nativas para picos de uso (>90%).
 * [ ] Interface de configuração para ajuste de cores e opacidade.
 
