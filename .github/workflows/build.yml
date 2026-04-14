@@ -1,4 +1,4 @@
-name: Build e Release v1.1.3
+name: Build e Release v1.1.4
 
 on:
   push:
@@ -11,16 +11,11 @@ env:
 
 jobs:
   build:
-    name: Build para ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Build e Setup Windows
+    runs-on: windows-latest
     
-    # LIBERAÇÃO DE PERMISSÃO: Essencial para corrigir o erro 403 e permitir a criação da Release
     permissions:
       contents: write
-
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -35,40 +30,32 @@ jobs:
         python -m pip install --upgrade pip
         pip install psutil pyinstaller pillow
 
-    - name: Gerar Executável (Windows)
-      if: matrix.os == 'windows-latest'
-      run: pyinstaller --noconsole --onedir --name "MonitorPerformance_v1.1.3" --icon="src/assets/monitor.ico" --version-file="src/file_version_info.txt" --add-data "src;src" src/gadget_view.py
+    - name: Gerar Executável (PyInstaller)
+      run: pyinstaller --noconsole --onedir --name "MonitorPerformance_v1.1.4" --icon="src/assets/monitor.ico" --version-file="src/file_version_info.txt" --add-data "src;src" src/gadget_view.py
 
-    - name: Criar ZIP para Distribuição (Windows)
-      if: matrix.os == 'windows-latest'
+    # LINHA 38 CORRIGIDA: Usando o compilador nativo do Inno Setup no Runner do Windows
+    - name: Compilar Instalador (Inno Setup)
       shell: pwsh
-      # O \* garante que zipamos o conteúdo, evitando pastas redundantes dentro do ZIP
-      run: Compress-Archive -Path dist/MonitorPerformance_v1.1.3\* -DestinationPath dist/MonitorPerformance_Windows_v1.1.3.zip
+      run: |
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
-    - name: Gerar Executável (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: pyinstaller --noconsole --onefile --name "MonitorPerformance_Linux_v1.1.3" --add-data "src:src" src/gadget_view.py
-
-    - name: Upload do Artefato
+    - name: Upload do Artefato (Para inspeção)
       uses: actions/upload-artifact@v4
       with:
-        name: MonitorPerformance-${{ matrix.os }}-v1.1.3
-        path: |
-          dist/*.zip
-          dist/MonitorPerformance_Linux_v1.1.3
-        if-no-files-found: error
+        name: MonitorPerformance-Setup-v1.1.4
+        path: Output/Setup_MonitorPerformance_v1.1.4.exe
 
     - name: Criar Release Oficial
-      if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'windows-latest'
+      if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/MonitorPerformance_Windows_v1.1.3.zip
+        files: Output/Setup_MonitorPerformance_v1.1.4.exe
         name: Release ${{ github.ref_name }}
         body: |
-          ## Monitor de Performance v1.1.3
-          - Correção da estrutura de compressão (fim do "duplo zip").
-          - Compilação limpa via GitHub Actions.
-          - Redução de falsos positivos via ofuscação técnica (nesta versão o Windows Defender não acusou).
+          ## Monitor de Performance v1.1.4
+          - **Novo Instalador Oficial**: Processo de instalação padrão Windows (.exe).
+          - **Segurança**: Build realizado em ambiente limpo via GitHub Actions.
+          - **Facilidade**: Atalhos automáticos no Menu Iniciar e Área de Trabalho.
         draft: false
         prerelease: false
       env:
