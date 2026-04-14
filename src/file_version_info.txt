@@ -25,6 +25,6 @@ VSVersionInfo(
         StringStruct(u'ProductName', u'Monitor de Performance de Sistema'),
         StringStruct(u'ProductVersion', u'1.1.0.0')])
       ]), 
-    VarFileInfo([VarTuple(u'Translation', [1033, 1200])])
+    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
   ]
 )
