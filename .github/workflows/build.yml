@@ -30,13 +30,8 @@ jobs:
 
     - name: Gerar Executável (Windows)
       if: matrix.os == 'windows-latest'
-      # Mudamos para --onedir para reduzir falsos positivos e incluímos metadados
-      run: |
-        pyinstaller --noconsole --onedir --name "MonitorPerformance_v1.1.0" \
-        --icon="src/assets/monitor.ico" \
-        --version-file="src/file_version_info.txt" \
-        --add-data "src;src" \
-        src/gadget_view.py
+      # No PowerShell, é mais seguro manter o comando em uma linha ou usar o operador de escape correto
+      run: pyinstaller --noconsole --onedir --name "MonitorPerformance_v1.1.0" --icon="src/assets/monitor.ico" --version-file="src/file_version_info.txt" --add-data "src;src" src/gadget_view.py
 
     - name: Gerar Executável (Linux)
       if: matrix.os == 'ubuntu-latest'
