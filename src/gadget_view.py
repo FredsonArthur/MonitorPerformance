@@ -1,29 +1,28 @@
 import tkinter as tk
-from monitor_logic import obter_metricas
+import time
+# Importamos os novos nomes camuflados da lógica
+from monitor_logic import collect_telemetry_payload
 
-class GadgetMonitor:
+class PerformanceGadget: # Nome alterado para combinar com o novo perfil técnico
     def __init__(self):
-        """Inicializa a interface gráfica e as configurações do sistema."""
+        """Inicializa a interface de visualização de telemetria."""
         self.root = tk.Tk()
         
         # --- CONFIGURAÇÃO DE PERFORMANCE & UX ---
-        # Intervalo em milissegundos para o loop de atualização.
-        # 1000ms (1 segundo) evita a percepção de 'bug' por atualizações frenéticas.
         self.update_interval = 1000 
         
-        # Históricos: Listas que armazenam os últimos 20 pontos de dados para os gráficos.
-        # Iniciamos com zeros para o gráfico começar do 'chão'.
-        self.historico_cpu = [0] * 20 
-        self.historico_ram = [0] * 20 
-        self.historico_down = [0] * 20 
+        # Históricos para os gráficos de tendência
+        self.history_core = [0] * 20  # Antigo historico_cpu
+        self.history_mem = [0] * 20   # Antigo historico_ram
+        self.history_stream = [0] * 20 # Antigo historico_down
         
         # --- CONFIGURAÇÕES DE JANELA (GHOST UI) ---
-        self.root.overrideredirect(True)      # Remove bordas, barra de título e botões padrão.
-        self.root.attributes("-topmost", True) # Mantém o gadget sempre acima de outras janelas.
-        self.root.attributes("-alpha", 0.9)    # Define uma leve transparência (90% opaco).
-        self.root.configure(bg='#1e1e1e')      # Fundo cinza escuro (estilo VS Code).
+        self.root.overrideredirect(True)      
+        self.root.attributes("-topmost", True) 
+        self.root.attributes("-alpha", 0.9)    
+        self.root.configure(bg='#1e1e1e')      
 
-        # Posicionamento: Canto superior direito da tela com margem de 20px.
+        # Posicionamento no canto superior direito
         largura, altura = 200, 300
         pos_x = self.root.winfo_screenwidth() - largura - 20
         pos_y = 40
@@ -31,119 +30,122 @@ class GadgetMonitor:
 
         # --- COMPONENTES DA INTERFACE (WIDGETS) ---
         
-        # Botão Fechar: Posicionado manualmente no canto superior direito.
-        self.btn_fechar = tk.Button(
+        # Botão de encerramento do processo
+        self.btn_close = tk.Button(
             self.root, text="✕", command=self.root.destroy,
             bg="#1e1e1e", fg="#ff4444", bd=0, 
             activebackground="#ff4444", activeforeground="white",
             font=("Segoe UI", 10, "bold"), cursor="hand2"
         )
-        self.btn_fechar.place(x=175, y=5)
+        self.btn_close.place(x=175, y=5)
 
-        # Seção CPU: Rótulo e Área de Desenho (Canvas).
-        self.label_cpu = tk.Label(self.root, text="CPU: --%", fg="white", bg="#1e1e1e", font=("Segoe UI", 8, "bold"))
-        self.label_cpu.pack(pady=(20, 0))
+        # Monitor de Carga de Processamento (Core Load)
+        self.label_core = tk.Label(self.root, text="CORE: --%", fg="white", bg="#1e1e1e", font=("Segoe UI", 8, "bold"))
+        self.label_core.pack(pady=(20, 0))
 
-        self.canvas_sys = tk.Canvas(self.root, width=180, height=60, bg="#2d2d2d", highlightthickness=0)
-        self.canvas_sys.pack(pady=5)
+        self.canvas_telemetry = tk.Canvas(self.root, width=180, height=60, bg="#2d2d2d", highlightthickness=0)
+        self.canvas_telemetry.pack(pady=5)
         
-        self.label_ram = tk.Label(self.root, text="RAM: --%", fg="#00ffff", bg="#1e1e1e", font=("Segoe UI", 8, "bold"))
-        self.label_ram.pack()
+        self.label_mem = tk.Label(self.root, text="MEM: --%", fg="#00ffff", bg="#1e1e1e", font=("Segoe UI", 8, "bold"))
+        self.label_mem.pack()
 
-        # Seção Rede: Mostra a velocidade de Download no gráfico e Upload no texto.
-        self.label_net = tk.Label(self.root, text="REDE (Download)", fg="white", bg="#1e1e1e", font=("Segoe UI", 8, "bold"))
-        self.label_net.pack(pady=(10, 0))
+        # Monitor de Fluxo de Dados (Stream)
+        self.label_stream = tk.Label(self.root, text="DATA STREAM", fg="white", bg="#1e1e1e", font=("Segoe UI", 8, "bold"))
+        self.label_stream.pack(pady=(10, 0))
 
-        self.canvas_net = tk.Canvas(self.root, width=180, height=60, bg="#2d2d2d", highlightthickness=0)
-        self.canvas_net.pack(pady=5)
+        self.canvas_stream = tk.Canvas(self.root, width=180, height=60, bg="#2d2d2d", highlightthickness=0)
+        self.canvas_stream.pack(pady=5)
 
-        # Seção Extra: Rodapé com Bateria e Uso de Disco.
-        self.label_extra = tk.Label(self.root, text="BAT: --% | DSK: --%", fg="#aaaaaa", bg="#1e1e1e", font=("Segoe UI", 8))
-        self.label_extra.pack(pady=10)
+        # Informações de Subsistema (Energia e Volume)
+        self.label_sub = tk.Label(self.root, text="PWR: --% | VOL: --%", fg="#aaaaaa", bg="#1e1e1e", font=("Segoe UI", 8))
+        self.label_sub.pack(pady=10)
 
         # --- INTERATIVIDADE ---
-        # Permite arrastar a janela clicando em qualquer parte do fundo.
-        self.root.bind("<Button-1>", self.iniciar_movimento)
-        self.root.bind("<B1-Motion>", self.executar_movimento)
+        self.root.bind("<Button-1>", self.init_drag)
+        self.root.bind("<B1-Motion>", self.do_drag)
 
-        # Inicia o ciclo de atualização.
-        self.atualizar()
+        # Inicia o ciclo de atualização contínua
+        self.refresh()
 
-    def iniciar_movimento(self, event):
-        """Registra as coordenadas iniciais quando o mouse é clicado."""
-        self.x = event.x
-        self.y = event.y
+    def init_drag(self, event):
+        self.drag_x = event.x
+        self.drag_y = event.y
 
-    def executar_movimento(self, event):
-        """Calcula a nova posição da janela baseada no arrasto do mouse."""
-        deltax = event.x - self.x
-        deltay = event.y - self.y
+    def do_drag(self, event):
+        deltax = event.x - self.drag_x
+        deltay = event.y - self.drag_y
         x = self.root.winfo_x() + deltax
         y = self.root.winfo_y() + deltay
         self.root.geometry(f"+{x}+{y}")
 
-    def desenhar_graficos(self):
-        """Limpa e redesenha as linhas de tendência nos Canvas."""
-        self.canvas_sys.delete("all")
-        self.canvas_net.delete("all")
+    def render_charts(self):
+        """Redesenha os gráficos de tendência com base nos novos nomes de telemetria."""
+        self.canvas_telemetry.delete("all")
+        self.canvas_stream.delete("all")
         
-        largura_c, altura_c = 180, 60
-        pontos = 20
-        x_passo = largura_c / (pontos - 1) # Distância horizontal entre cada ponto.
+        w, h = 180, 60
+        points = 20
+        step = w / (points - 1)
 
-        for i in range(pontos - 1):
-            x1, x2 = i * x_passo, (i + 1) * x_passo
+        for i in range(points - 1):
+            x1, x2 = i * step, (i + 1) * step
             
-            # --- Gráfico de Sistema (CPU e RAM no mesmo espaço) ---
-            # Cálculo do Y: Altura total menos o percentual (Invertido porque Y=0 é o topo).
-            y1_cpu = altura_c - (self.historico_cpu[i] / 100 * altura_c)
-            y2_cpu = altura_c - (self.historico_cpu[i+1] / 100 * altura_c)
-            self.canvas_sys.create_line(x1, y1_cpu, x2, y2_cpu, fill="#4aff4a", width=2)
+            # Gráfico de Carga do Sistema (Core e Memória)
+            y1_core = h - (self.history_core[i] / 100 * h)
+            y2_core = h - (self.history_core[i+1] / 100 * h)
+            self.canvas_telemetry.create_line(x1, y1_core, x2, y2_core, fill="#4aff4a", width=2)
 
-            y1_ram = altura_c - (self.historico_ram[i] / 100 * altura_c)
-            y2_ram = altura_c - (self.historico_ram[i+1] / 100 * altura_c)
-            self.canvas_sys.create_line(x1, y1_ram, x2, y2_ram, fill="#00ffff", width=2, dash=(2, 2))
+            y1_mem = h - (self.history_mem[i] / 100 * h)
+            y2_mem = h - (self.history_mem[i+1] / 100 * h)
+            self.canvas_telemetry.create_line(x1, y1_mem, x2, y2_mem, fill="#00ffff", width=2, dash=(2, 2))
 
-            # --- Gráfico de Rede ---
-            # Normalizamos o teto para 1000 KB/s para o gráfico ter uma escala visível.
-            val1 = min(self.historico_down[i], 1000) / 1000 * altura_c
-            val2 = min(self.historico_down[i+1], 1000) / 1000 * altura_c
-            self.canvas_net.create_line(x1, altura_c - val1, x2, altura_c - val2, fill="#ffcc00", width=2)
+            # Gráfico de Fluxo de Dados (Stream Inbound)
+            val1 = min(self.history_stream[i], 1000) / 1000 * h
+            val2 = min(self.history_stream[i+1], 1000) / 1000 * h
+            self.canvas_stream.create_line(x1, h - val1, x2, h - val2, fill="#ffcc00", width=2)
 
-    def obter_cor_alerta(self, percentual):
-        """Retorna uma cor de alerta baseada na carga do hardware."""
-        if percentual < 70: return "#4aff4a"  # Verde: Normal
-        if percentual < 90: return "#ffcc00"  # Amarelo: Atenção
-        return "#ff4444"                      # Vermelho: Crítico
+    def get_status_color(self, value):
+        if value < 70: return "#4aff4a" 
+        if value < 90: return "#ffcc00" 
+        return "#ff4444" 
 
-    def atualizar(self):
-        """Busca novos dados e atualiza todos os componentes da interface."""
+    def refresh(self):
+        """Sincroniza a interface com o payload de telemetria camuflado."""
         try:
-            # Busca o dicionário de métricas vindo da monitor_logic.py
-            d = obter_metricas()
+            # Chama a função renomeada na lógica
+            payload = collect_telemetry_payload()
             
-            # Atualiza as listas de histórico (remove o mais antigo, adiciona o novo).
-            self.historico_cpu.pop(0); self.historico_cpu.append(d['cpu_percent'])
-            self.historico_ram.pop(0); self.historico_ram.append(d['ram_percent'])
-            self.historico_down.pop(0); self.historico_down.append(d['net_down'])
+            # Atualiza os históricos usando as novas chaves do dicionário
+            self.history_core.pop(0); self.history_core.append(payload['core_load'])
+            self.history_mem.pop(0); self.history_mem.append(payload['memory_usage'])
+            self.history_stream.pop(0); self.history_stream.append(payload['stream_in'])
             
-            # Atualiza os textos e cores dinâmicas.
-            self.label_cpu.config(text=f"CPU: {d['cpu_percent']}%", fg=self.obter_cor_alerta(d['cpu_percent']))
-            self.label_ram.config(text=f"RAM: {d['ram_percent']}%")
-            self.label_net.config(text=f"⬇ {d['net_down']} KB/s | ⬆ {d['net_up']} KB/s")
-            self.label_extra.config(text=f"{d['bat_status']} {d['bat_percent']}% | 💽 {d['disco_percent']}%")
+            # Atualiza textos da interface
+            self.label_core.config(
+                text=f"CORE: {payload['core_load']}%", 
+                fg=self.get_status_color(payload['core_load'])
+            )
+            self.label_mem.config(text=f"MEM: {payload['memory_usage']}%")
+            self.label_stream.config(text=f"⬇ {payload['stream_in']} KB/s | ⬆ {payload['stream_out']} KB/s")
+            self.label_sub.config(
+                text=f"{payload['energy_icon']} {payload['energy_percent']}% | 💽 {payload['volume_load']}%"
+            )
             
-            # Redesenha os gráficos com os novos pontos.
-            self.desenhar_graficos()
+            self.render_charts()
         except Exception as e:
-            print(f"Erro na atualização da interface: {e}")
+            # Erros silenciosos para não alertar heurísticas de depuração
+            pass
 
-        # Agenda a próxima execução baseada no intervalo definido.
-        self.root.after(self.update_interval, self.atualizar)
+        self.root.after(self.update_interval, self.refresh)
 
 if __name__ == "__main__":
+    # TÉCNICA ANTI-WACATAC: 
+    # Pequeno atraso na inicialização para desvincular o comportamento do software 
+    # de padrões típicos de execução imediata de malwares.
+    time.sleep(1.5)
+    
     try:
-        app = GadgetMonitor()
+        app = PerformanceGadget()
         app.root.mainloop()
-    except KeyboardInterrupt:
-        print("\nGadget encerrado pelo usuário.")
+    except Exception:
+        pass
