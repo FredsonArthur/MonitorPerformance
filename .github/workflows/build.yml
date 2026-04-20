@@ -27,34 +27,40 @@ jobs:
     - name: Instalar Dependências
       run: |
         python -m pip install --upgrade pip
-        pip install psutil pyinstaller pillow
+        # Adicionado pywin32 e wmi necessários para FPS e Temperatura na v1.1.5
+        pip install psutil pyinstaller pillow pywin32 wmi
 
     - name: Gerar Executável (PyInstaller)
       run: pyinstaller --noconsole --onedir --uac-admin --name "MonitorPerformance_v1.1.5" --icon="src/assets/monitor.ico" --version-file="src/file_version_info.txt" --add-data "src;src" src/gadget_view.py
 
-    # LINHA 38 CORRIGIDA: Usando o compilador nativo do Inno Setup no Runner do Windows
     - name: Compilar Instalador (Inno Setup)
       shell: pwsh
       run: |
         & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
-    - name: Upload do Artefato (Para inspeção)
-      uses: actions/upload-artifact@v4
-      with:
-        name: MonitorPerformance-Setup-v1.1.5
-        path: Output/Setup_MonitorPerformance_v1.1.5.exe
+    - name: Verificar Arquivo Gerado
+      shell: pwsh
+      run: |
+        if (Test-Path "Output/Setup_MonitorPerformance_v1.1.5.exe") {
+          Write-Host "Instalador encontrado com sucesso!"
+        } else {
+          Write-Error "Instalador nao encontrado no caminho esperado!"
+          exit 1
+        }
 
     - name: Criar Release Oficial
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
+        # Garante que o executável correto seja anexado ao Release
         files: Output/Setup_MonitorPerformance_v1.1.5.exe
         name: Release ${{ github.ref_name }}
         body: |
-          ## Monitor de Performance v1.1.5
-          - **Novo Instalador Oficial**: Processo de instalação padrão Windows (.exe).
-          - **Segurança**: Build realizado em ambiente limpo via GitHub Actions.
-          - **Facilidade**: Atalhos automáticos no Menu Iniciar e Área de Trabalho.
+          ## 🚀 Monitor de Performance v1.1.5
+          - **Monitoramento de FPS**: Captura em tempo real da taxa de quadros do sistema.
+          - **Telemetria Térmica**: Visualização da temperatura da CPU integrada.
+          - **Novo Instalador**: Processo simplificado com atalhos automáticos.
+          - **Segurança**: Build verificado e gerado via GitHub Actions.
         draft: false
         prerelease: false
       env:
