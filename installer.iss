@@ -1,6 +1,6 @@
 ; Script do Inno Setup para o Monitor de Performance v1.1.4
 [Setup]
-AppId={C789B123-A123-4ABC-A123-456789ABCDEF}
+AppId={{C789B123-A123-4ABC-A123-456789ABCDEF}
 AppName=Monitor de Performance
 AppVersion=1.1.5
 AppPublisher=Fredson Arthur
