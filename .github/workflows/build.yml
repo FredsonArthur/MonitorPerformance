@@ -2,7 +2,6 @@ name: Build e Release v1.1.5
 
 on:
   push:
-    branches: [ main ]
     tags:
       - 'v*'
 
