@@ -1,4 +1,4 @@
-name: Build e Release v1.1.4
+name: Build e Release v1.1.5
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
         pip install psutil pyinstaller pillow
 
     - name: Gerar Executável (PyInstaller)
-      run: pyinstaller --noconsole --onedir --name "MonitorPerformance_v1.1.4" --icon="src/assets/monitor.ico" --version-file="src/file_version_info.txt" --add-data "src;src" src/gadget_view.py
+      run: pyinstaller --noconsole --onedir --uac-admin --name "MonitorPerformance_v1.1.5" --icon="src/assets/monitor.ico" --version-file="src/file_version_info.txt" --add-data "src;src" src/gadget_view.py
 
     # LINHA 38 CORRIGIDA: Usando o compilador nativo do Inno Setup no Runner do Windows
     - name: Compilar Instalador (Inno Setup)
@@ -42,17 +42,17 @@ jobs:
     - name: Upload do Artefato (Para inspeção)
       uses: actions/upload-artifact@v4
       with:
-        name: MonitorPerformance-Setup-v1.1.4
-        path: Output/Setup_MonitorPerformance_v1.1.4.exe
+        name: MonitorPerformance-Setup-v1.1.5
+        path: Output/Setup_MonitorPerformance_v1.1.5.exe
 
     - name: Criar Release Oficial
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: Output/Setup_MonitorPerformance_v1.1.4.exe
+        files: Output/Setup_MonitorPerformance_v1.1.5.exe
         name: Release ${{ github.ref_name }}
         body: |
-          ## Monitor de Performance v1.1.4
+          ## Monitor de Performance v1.1.5
           - **Novo Instalador Oficial**: Processo de instalação padrão Windows (.exe).
           - **Segurança**: Build realizado em ambiente limpo via GitHub Actions.
           - **Facilidade**: Atalhos automáticos no Menu Iniciar e Área de Trabalho.

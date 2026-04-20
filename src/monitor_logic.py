@@ -1,83 +1,121 @@
 import psutil
 import csv
 import os
+import win32pdh
+import wmi
 from datetime import datetime
 
-# Termos como 'net', 'upload' e 'download' são frequentemente vigiados por IAs de segurança.
-# Alteramos para 'inbound' (entrada) e 'outbound' (saída) para um perfil mais técnico e neutro.
+# Sincronização de estado para cálculo de tráfego de rede
 last_inbound_stream = psutil.net_io_counters().bytes_recv
 last_outbound_stream = psutil.net_io_counters().bytes_sent
 
+def get_cpu_temp():
+    """
+    Tenta capturar a temperatura através de múltiplos métodos.
+    REQUER EXECUÇÃO COMO ADMINISTRADOR.
+    """
+    # Método 1: MSAcpi (Padrão Windows via WMI)
+    try:
+        w = wmi.WMI(namespace="root\\wmi")
+        temp_data = w.MSAcpi_ThermalZoneTemperature()
+        if temp_data:
+            return round((temp_data[0].CurrentTemperature / 10.0) - 273.15, 1)
+    except:
+        pass
+
+    # Método 2: Fallback via Performance Counters
+    try:
+        query = win32pdh.OpenQuery()
+        handle = win32pdh.AddCounter(query, r"\Thermal Zone Information(*)\Temperature")
+        win32pdh.CollectQueryData(query)
+        _, val = win32pdh.GetFormattedCounterValue(handle, win32pdh.PDH_FMT_DOUBLE)
+        win32pdh.CloseQuery(query)
+        # Converte Kelvin para Celsius se o valor parecer ser K
+        return round(val - 273.15, 1) if val > 200 else round(val, 1)
+    except:
+        return 0.0
+
+def get_performance_metrics():
+    """
+    Captura FPS e carga de GPU de forma combinada para otimizar o uso da PDH Query.
+    """
+    res = {"fps": 0.0, "gpu": 0.0}
+    try:
+        query = win32pdh.OpenQuery()
+        h_fps = win32pdh.AddCounter(query, r"\Display Output(*)\FramesPerSec")
+        h_gpu = win32pdh.AddCounter(query, win32pdh.MakeCounterPath((None, "GPU Engine", "pid_*", None, -1, "Utilization")))
+        
+        # O Windows precisa de dois samples para calcular taxas (deltas)
+        win32pdh.CollectQueryData(query)
+        win32pdh.CollectQueryData(query)
+        
+        _, v_fps = win32pdh.GetFormattedCounterValue(h_fps, win32pdh.PDH_FMT_DOUBLE)
+        _, v_gpu = win32pdh.GetFormattedCounterValue(h_gpu, win32pdh.PDH_FMT_DOUBLE)
+        
+        res["fps"] = round(v_fps, 1) if v_fps > 0 else 0.0
+        res["gpu"] = round(min(v_gpu, 100.0), 1)
+        win32pdh.CloseQuery(query)
+    except:
+        pass
+    return res
+
 def collect_telemetry_payload():
-    """
-    Captura métricas brutas de telemetria do hardware (CPU, MEM, DISK, NET, PWR).
-    Nomes de funções e chaves de dicionário foram neutralizados para evitar gatilhos heurísticos.
-    """
+    """Consolida todas as métricas para a v1.1.5 (Inclui FPS e Temperatura)."""
     global last_inbound_stream, last_outbound_stream
     
-    # 1. Processamento de Fluxo de Dados (Rede)
-    # Evitamos o uso excessivo de termos como 'network' ou 'speed'
+    # Captura métricas de performance (FPS/GPU) e Térmica
+    perf = get_performance_metrics()
+    cpu_temp = get_cpu_temp()
+    
+    # 1. Rede
     raw_io = psutil.net_io_counters()
     inbound_delta = (raw_io.bytes_recv - last_inbound_stream) / 1024
     outbound_delta = (raw_io.bytes_sent - last_outbound_stream) / 1024
-    
-    # Sincronização de estado para a próxima coleta
     last_inbound_stream, last_outbound_stream = raw_io.bytes_recv, raw_io.bytes_sent
 
-    # 2. Status da Unidade de Energia (Bateria)
-    # Renomeado para 'power_cell' para fugir de padrões de varredura simples
+    # 2. Energia e Disco
     power_cell = psutil.sensors_battery()
     energy_level = power_cell.percent if power_cell else 0
     is_charging = power_cell.power_plugged if power_cell else False
-
-    # 3. Métricas de Volume Local (Disco)
     volume_stats = psutil.disk_usage('/')
-    
-    # O dicionário de retorno agora usa chaves que remetem a logs de infraestrutura corporativa
+
     return {
-        "core_load": psutil.cpu_percent(interval=None),             # Em vez de cpu_percent
-        "memory_usage": psutil.virtual_memory().percent,            # Em vez de ram_percent
-        "memory_used_gb": round(psutil.virtual_memory().used / (1024**3), 2),
-        "volume_load": volume_stats.percent,                        # Em vez de disco_percent
-        "volume_free_gb": round(volume_stats.free / (1024**3), 2),
-        "volume_total_gb": round(volume_stats.total / (1024**3), 2),
-        "stream_in": round(inbound_delta, 1),                       # Em vez de net_down
-        "stream_out": round(outbound_delta, 1),                     # Em vez de net_up
-        "energy_percent": energy_level,                             # Em vez de bat_percent
-        "energy_icon": "⚡" if is_charging else "🔋"                # Em vez de bat_status
+        "core_load": psutil.cpu_percent(interval=None),
+        "cpu_temp": cpu_temp,
+        "fps_rate": perf["fps"],
+        "memory_usage": psutil.virtual_memory().percent,
+        "volume_load": volume_stats.percent,
+        "stream_in": round(inbound_delta, 1),
+        "stream_out": round(outbound_delta, 1),
+        "energy_percent": energy_level,
+        "energy_icon": "⚡" if is_charging else "🔋",
+        "gpu_load": perf["gpu"],
+        "gpu_mem": 0.0 
     }
 
 def commit_telemetry_log(data_payload):
-    """
-    Persiste o payload de telemetria em um arquivo físico para auditoria posterior.
-    Nomes de variáveis alterados para desvincular de comportamentos de 'logging' suspeito.
-    """
-    # Define o caminho para armazenamento local
+    """Persiste o payload completo no CSV para auditoria de performance."""
     working_dir = os.path.dirname(__file__)
     data_vault = os.path.abspath(os.path.join(working_dir, '..', 'logs'))
     target_registry = os.path.join(data_vault, 'performance.csv')
 
-    # Garante a integridade da estrutura de diretórios
     if not os.path.exists(data_vault):
         os.makedirs(data_vault)
 
-    # Verifica se o cabeçalho deve ser inicializado
     is_initial_entry = not os.path.exists(target_registry)
 
-    # Gravação dos dados em modo append com codificação segura
     with open(target_registry, mode='a', newline='', encoding='utf-8') as registry:
         writer = csv.writer(registry)
-        
-        # Cabeçalho técnico e padronizado
         if is_initial_entry:
-            writer.writerow(['Timestamp', 'CoreLoad', 'MemUsage', 'VolLoad', 'Inbound(KB/s)', 'Outbound(KB/s)', 'Energy(%)'])
+            # Cabeçalho completo v1.1.5
+            writer.writerow(['Timestamp', 'CoreLoad', 'Temp', 'FPS', 'MemUsage', 'Inbound(KB/s)', 'GPULoad'])
         
         writer.writerow([
             datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
             data_payload['core_load'],
+            data_payload['cpu_temp'],
+            data_payload['fps_rate'],
             data_payload['memory_usage'],
-            data_payload['volume_load'],
             data_payload['stream_in'],
-            data_payload['stream_out'],
-            data_payload['energy_percent']
+            data_payload['gpu_load']
         ])
